@@ -9,6 +9,7 @@
     "out/**/*"
   ],
   "license": "MIT",
+  "repository": "github:TerraDharitri/drt-js-sdk-network-providers",
   "main": "out/index.js",
   "types": "out/index.d.js",
   "packages": {},
