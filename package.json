@@ -9,6 +9,7 @@
     "out/**/*"
   ],
   "license": "MIT",
+  "repository": "github:TerraDharitri/drt-js-sdk-network-providers",
   "main": "out/index.js",
   "types": "out/index.d.js",
   "packages": {},
@@ -17,7 +18,9 @@
     "bech32": "1.1.4",
     "bignumber.js": "9.0.1",
     "buffer": "6.0.3",
-    "json-bigint": "1.0.0"
+    "dotenv": "^8.2.0",
+    "json-bigint": "1.0.0",
+    "node-fetch": "^3.3.2"
   },
   "devDependencies": {
     "@types/assert": "1.4.6",
