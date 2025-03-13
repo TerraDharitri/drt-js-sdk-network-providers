@@ -1,32 +1,28 @@
-import axios from "axios";
-import { AccountOnNetwork, GuardianData } from "./accounts";
-import { defaultAxiosConfig } from "./config";
-import { DcdtContractAddress, BaseUserAgent } from "./constants";
-import { ContractQueryRequest } from "./contractQueryRequest";
-import { ContractQueryResponse } from "./contractQueryResponse";
-import { ErrContractQuery, ErrNetworkProvider } from "./errors";
-import { IAddress, IContractQuery, INetworkProvider, IPagination, ITransaction, ITransactionNext } from "./interface";
+import axios, { AxiosRequestConfig } from "axios";
+import { AccountOnNetwork } from "./accounts";
+import { IAddress, IContractQuery, INetworkProvider, IPagination, ITransaction } from "./interface";
 import { NetworkConfig } from "./networkConfig";
-import { NetworkGeneralStatistics } from "./networkGeneralStatistics";
 import { NetworkStake } from "./networkStake";
-import { NetworkStatus } from "./networkStatus";
-import { DefinitionOfFungibleTokenOnNetwork, DefinitionOfTokenCollectionOnNetwork } from "./tokenDefinitions";
+import { NetworkGeneralStatistics } from "./networkGeneralStatistics";
 import { FungibleTokenOfAccountOnNetwork, NonFungibleTokenOfAccountOnNetwork } from "./tokens";
-import { TransactionOnNetwork, prepareTransactionForBroadcasting } from "./transactions";
+import { TransactionOnNetwork } from "./transactions";
 import { TransactionStatus } from "./transactionStatus";
-import { extendUserAgentIfBackend } from "./userAgent";
-import { NetworkProviderConfig } from "./networkProviderConfig";
+import { ErrContractQuery, ErrNetworkProvider } from "./errors";
+import { defaultAxiosConfig } from "./config";
+import { NetworkStatus } from "./networkStatus";
+import { ContractQueryResponse } from "./contractQueryResponse";
+import { DefinitionOfFungibleTokenOnNetwork, DefinitionOfTokenCollectionOnNetwork } from "./tokenDefinitions";
+import { ContractQueryRequest } from "./contractQueryRequest";
+import { DcdtContractAddress } from "./constants";
 
 // TODO: Find & remove duplicate code between "ProxyNetworkProvider" and "ApiNetworkProvider".
 export class ProxyNetworkProvider implements INetworkProvider {
     private url: string;
-    private config: NetworkProviderConfig;
-    private userAgentPrefix = `${BaseUserAgent}/proxy`
+    private config: AxiosRequestConfig;
 
-    constructor(url: string, config?: NetworkProviderConfig) {
+    constructor(url: string, config?: AxiosRequestConfig) {
         this.url = url;
         this.config = { ...defaultAxiosConfig, ...config };
-        extendUserAgentIfBackend(this.userAgentPrefix, this.config);
     }
 
     async getNetworkConfig(): Promise<NetworkConfig> {
@@ -43,13 +39,13 @@ export class ProxyNetworkProvider implements INetworkProvider {
 
     async getNetworkStakeStatistics(): Promise<NetworkStake> {
         // TODO: Implement wrt.:
-        // https://github.com/dharitri/drt-api-service/blob/main/src/endpoints/stake/stake.service.ts
+        // https://github.com/TerraDharitri/api.dharitri.org/blob/main/src/endpoints/stake/stake.service.ts
         throw new Error("Method not implemented.");
     }
 
     async getNetworkGeneralStatistics(): Promise<NetworkGeneralStatistics> {
         // TODO: Implement wrt. (full implementation may not be possible):
-        // https://github.com/dharitri/drt-api-service/blob/main/src/endpoints/network/network.service.ts
+        // https://github.com/TerraDharitri/api.dharitri.org/blob/main/src/endpoints/network/network.service.ts
         throw new Error("Method not implemented.");
     }
 
@@ -57,12 +53,6 @@ export class ProxyNetworkProvider implements INetworkProvider {
         let response = await this.doGetGeneric(`address/${address.bech32()}`);
         let account = AccountOnNetwork.fromHttpResponse(response.account);
         return account;
-    }
-
-    async getGuardianData(address: IAddress): Promise<GuardianData> {
-        const response = await this.doGetGeneric(`address/${address.bech32()}/guardian-data`);
-        const accountGuardian = GuardianData.fromHttpResponse(response.guardianData);
-        return accountGuardian;
     }
 
     async getFungibleTokensOfAccount(address: IAddress, _pagination?: IPagination): Promise<FungibleTokenOfAccountOnNetwork[]> {
@@ -103,40 +93,26 @@ export class ProxyNetworkProvider implements INetworkProvider {
         return tokenData;
     }
 
-    async getTransaction(txHash: string, _?: boolean): Promise<TransactionOnNetwork> {
-        const url = this.buildUrlWithQueryParameters(`transaction/${txHash}`, { withResults: "true" });
-        const [data, status] = await Promise.all([this.doGetGeneric(url), this.getTransactionStatus(txHash)]);
-        return TransactionOnNetwork.fromProxyHttpResponse(txHash, data.transaction, status);
+    async getTransaction(txHash: string): Promise<TransactionOnNetwork> {
+        let url = this.buildUrlWithQueryParameters(`transaction/${txHash}`, { withResults: "true" });
+        let response = await this.doGetGeneric(url);
+        let transaction = TransactionOnNetwork.fromProxyHttpResponse(txHash, response.transaction);
+        return transaction;
     }
 
     async getTransactionStatus(txHash: string): Promise<TransactionStatus> {
-        let response = await this.doGetGeneric(`transaction/${txHash}/process-status`);
+        let response = await this.doGetGeneric(`transaction/${txHash}/status`);
         let status = new TransactionStatus(response.status);
         return status;
     }
 
-    async sendTransaction(tx: ITransaction | ITransactionNext): Promise<string> {
-        const transaction = prepareTransactionForBroadcasting(tx);
-        const response = await this.doPostGeneric("transaction/send", transaction);
+    async sendTransaction(tx: ITransaction): Promise<string> {
+        let response = await this.doPostGeneric("transaction/send", tx.toSendable());
         return response.txHash;
     }
 
-    async sendTransactions(txs: (ITransaction | ITransactionNext)[]): Promise<string[]> {
-        const data = (txs).map((tx) => prepareTransactionForBroadcasting(tx));
-
-        const response = await this.doPostGeneric("transaction/send-multiple", data);
-        const hashes = Array(txs.length).fill(null);
-
-        for (let i = 0; i < txs.length; i++) {
-            hashes[i] = response.txsHashes[i.toString()] || null;
-        }
-
-        return hashes;
-    }
-
-    async simulateTransaction(tx: ITransaction | ITransactionNext): Promise<any> {
-        const transaction = prepareTransactionForBroadcasting(tx);
-        const response = await this.doPostGeneric("transaction/simulate", transaction);
+    async simulateTransaction(tx: ITransaction): Promise<any> {
+        let response = await this.doPostGeneric("transaction/simulate", tx.toSendable());
         return response;
     }
 
@@ -209,7 +185,6 @@ export class ProxyNetworkProvider implements INetworkProvider {
                 ...this.config,
                 headers: {
                     "Content-Type": "application/json",
-                    ...this.config.headers,
                 },
             });
             let responsePayload = response.data.data;
@@ -236,8 +211,8 @@ export class ProxyNetworkProvider implements INetworkProvider {
             throw new ErrNetworkProvider(resourceUrl, error.toString(), error);
         }
 
-        const errorData = error.response.data;
-        const originalErrorMessage = errorData.message || errorData.error || JSON.stringify(errorData);
+        let errorData = error.response.data;
+        let originalErrorMessage = errorData.error || errorData.message || JSON.stringify(errorData);
         throw new ErrNetworkProvider(resourceUrl, originalErrorMessage, error);
     }
 }

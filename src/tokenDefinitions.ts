@@ -1,6 +1,6 @@
-import BigNumber from "bignumber.js";
-import { IAddress } from "./interface";
+import { BigNumber } from "bignumber.js";
 import { Address } from "./primitives";
+import { IAddress } from "./interface";
 
 export class DefinitionOfFungibleTokenOnNetwork {
     identifier: string = "";
@@ -18,7 +18,6 @@ export class DefinitionOfFungibleTokenOnNetwork {
     canFreeze: boolean = false;
     canWipe: boolean = false;
     canAddSpecialRoles: boolean = false;
-    assets: Record<string, any> = {};
 
     static fromApiHttpResponse(payload: any): DefinitionOfFungibleTokenOnNetwork {
         let result = new DefinitionOfFungibleTokenOnNetwork();
@@ -37,14 +36,13 @@ export class DefinitionOfFungibleTokenOnNetwork {
         result.canPause = payload.canPause || false;
         result.canFreeze = payload.canFreeze || false;
         result.canWipe = payload.canWipe || false;
-        result.assets = payload.assets || {};
 
         return result;
     }
 
     /**
      * The implementation has been moved here from the following location:
-     * https://github.com/dharitri/drt-sdk-js-core/blob/release/v9/src/token.ts
+     * https://github.com/TerraDharitri/drt-sdk-drtjs/blob/release/v9/src/token.ts
      */
     static fromResponseOfGetTokenProperties(identifier: string, data: Buffer[]): DefinitionOfFungibleTokenOnNetwork {
         let result = new DefinitionOfFungibleTokenOnNetwork();
@@ -81,11 +79,7 @@ export class DefinitionOfTokenCollectionOnNetwork {
     canPause: boolean = false;
     canFreeze: boolean = false;
     canWipe: boolean = false;
-    canUpgrade: boolean = false;
-    canChangeOwner: boolean = false;
-    canAddSpecialRoles: boolean = false;
     canTransferNftCreateRole: boolean = false;
-    canCreateMultiShard: boolean = false;
 
     static fromApiHttpResponse(payload: any): DefinitionOfTokenCollectionOnNetwork {
         let result = new DefinitionOfTokenCollectionOnNetwork();
@@ -99,8 +93,6 @@ export class DefinitionOfTokenCollectionOnNetwork {
         result.canPause = payload.canPause || false;
         result.canFreeze = payload.canFreeze || false;
         result.canWipe = payload.canWipe || false;
-        result.canUpgrade = payload.canUpgrade || false;
-        result.canAddSpecialRoles = payload.canAddSpecialRoles || false;
         result.canTransferNftCreateRole = payload.canTransferNftCreateRole || false;
 
         return result;
@@ -108,9 +100,9 @@ export class DefinitionOfTokenCollectionOnNetwork {
 
     /**
      * The implementation has been moved here from the following location:
-     * https://github.com/dharitri/drt-sdk-js-core/blob/release/v9/src/token.ts
+     * https://github.com/TerraDharitri/drt-sdk-drtjs/blob/release/v9/src/token.ts
      */
-    static fromResponseOfGetTokenProperties(collection: string, data: Buffer[]): DefinitionOfTokenCollectionOnNetwork {
+     static fromResponseOfGetTokenProperties(collection: string, data: Buffer[]): DefinitionOfTokenCollectionOnNetwork {
         let result = new DefinitionOfTokenCollectionOnNetwork();
 
         let [tokenName, tokenType, owner, _, __, ...propertiesBuffers] = data;
@@ -121,15 +113,11 @@ export class DefinitionOfTokenCollectionOnNetwork {
         result.name = tokenName.toString();
         result.ticker = collection;
         result.owner = Address.fromPubkey(owner);
-        result.decimals = properties.NumDecimals.toNumber() ?? 0;
-        result.canPause = properties.CanPause || false;
-        result.canFreeze = properties.CanFreeze || false;
-        result.canWipe = properties.CanWipe || false;
-        result.canUpgrade = properties.CanUpgrade || false;
-        result.canChangeOwner = properties.CanChangeOwner || false;
-        result.canAddSpecialRoles = properties.CanAddSpecialRoles || false;
-        result.canTransferNftCreateRole = properties.CanTransferNFTCreateRole || false;
-        result.canCreateMultiShard = properties.CanCreateMultiShard || false;
+        result.decimals = properties.NumDecimals.toNumber();
+        result.canPause = properties.CanPause;
+        result.canFreeze = properties.CanFreeze;
+        result.canWipe = properties.CanWipe;
+        result.canTransferNftCreateRole = properties.CanTransferNFTCreateRole;
 
         return result;
     }
