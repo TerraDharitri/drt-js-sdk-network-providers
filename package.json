@@ -1,20 +1,19 @@
 {
   "name": "@terradharitri/sdk-network-providers",
-  "version": "0.1.o",
+  "version": "1.0.0",
   "lockfileVersion": 2,
   "requires": true,
-  "author": "Dharitri",
-  "description": "Network Provider (API, Gateway) components (compatible with @terradharitri/sdk-core)",
+  "author": "TerraDharitri",
+  "description": "Network Provider (API, Gateway) components (compatible with drtjs)",
   "files": [
     "out/**/*"
   ],
   "license": "MIT",
-  "repository": "github:TerraDharitri/drt-js-sdk-network-providers",
   "main": "out/index.js",
   "types": "out/index.d.js",
   "packages": {},
   "dependencies": {
-    "@terradharitri/sdk-network-providers": "file:",
+    "axios": "0.24.0",
     "bech32": "1.1.4",
     "bignumber.js": "9.0.1",
     "buffer": "6.0.3",
@@ -27,14 +26,11 @@
     "@types/node": "13.13.2",
     "assert": "2.0.0",
     "chai": "4.2.0",
-    "mocha": "^11.1.0",
+    "mocha": "9.2.2",
     "ts-node": "9.1.1",
     "tslint": "6.1.3",
     "typedoc": "0.22.13",
     "typescript": "4.1.2"
-  },
-  "peerDependencies": {
-    "axios": "^1.7.4"
   },
   "scripts": {
     "compile": "tsc -p tsconfig.json",

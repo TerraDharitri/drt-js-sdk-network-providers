@@ -1,44 +1,31 @@
-import axios from "axios";
-import { AccountOnNetwork, GuardianData } from "./accounts";
-import { defaultAxiosConfig, defaultPagination } from "./config";
-import { BaseUserAgent } from "./constants";
-import { ContractQueryRequest } from "./contractQueryRequest";
-import { ContractQueryResponse } from "./contractQueryResponse";
-import { ErrContractQuery, ErrNetworkProvider } from "./errors";
-import { IAddress, IContractQuery, INetworkProvider, IPagination, ITransaction, ITransactionNext } from "./interface";
+import axios, { AxiosRequestConfig } from "axios";
+import { AccountOnNetwork } from "./accounts";
+import { IAddress, IContractQuery, INetworkProvider, ITransaction, IPagination } from "./interface";
 import { NetworkConfig } from "./networkConfig";
-import { NetworkGeneralStatistics } from "./networkGeneralStatistics";
-import { NetworkProviderConfig } from "./networkProviderConfig";
 import { NetworkStake } from "./networkStake";
-import { NetworkStatus } from "./networkStatus";
-import { PairOnNetwork } from "./pairs";
-import { Nonce } from "./primitives";
+import { NetworkGeneralStatistics } from "./networkGeneralStatistics";
 import { ProxyNetworkProvider } from "./proxyNetworkProvider";
 import { DefinitionOfFungibleTokenOnNetwork, DefinitionOfTokenCollectionOnNetwork } from "./tokenDefinitions";
 import { FungibleTokenOfAccountOnNetwork, NonFungibleTokenOfAccountOnNetwork } from "./tokens";
-import { TransactionOnNetwork, prepareTransactionForBroadcasting } from "./transactions";
+import { TransactionOnNetwork } from "./transactions";
 import { TransactionStatus } from "./transactionStatus";
-import { extendUserAgentIfBackend } from "./userAgent";
+import { Nonce } from "./primitives";
+import { ErrContractQuery, ErrNetworkProvider } from "./errors";
+import { defaultAxiosConfig, defaultPagination } from "./config";
+import { NetworkStatus } from "./networkStatus";
+import { ContractQueryResponse } from "./contractQueryResponse";
+import { ContractQueryRequest } from "./contractQueryRequest";
 
 // TODO: Find & remove duplicate code between "ProxyNetworkProvider" and "ApiNetworkProvider".
 export class ApiNetworkProvider implements INetworkProvider {
     private url: string;
-    private config: NetworkProviderConfig;
+    private config: AxiosRequestConfig;
     private backingProxyNetworkProvider;
-    private userAgentPrefix = `${BaseUserAgent}/api`
 
-    constructor(url: string, config?: NetworkProviderConfig) {
+    constructor(url: string, config?: AxiosRequestConfig) {
         this.url = url;
-        let proxyConfig = this.getProxyConfig(config);
         this.config = { ...defaultAxiosConfig, ...config };
-        this.backingProxyNetworkProvider = new ProxyNetworkProvider(url, proxyConfig);
-        extendUserAgentIfBackend(this.userAgentPrefix, this.config);
-    }
-
-    private getProxyConfig(config: NetworkProviderConfig | undefined) {
-        let proxyConfig = JSON.parse(JSON.stringify(config || {}));
-        proxyConfig = { ...defaultAxiosConfig, ...proxyConfig };
-        return proxyConfig;
+        this.backingProxyNetworkProvider = new ProxyNetworkProvider(url, config);
     }
 
     async getNetworkConfig(): Promise<NetworkConfig> {
@@ -67,10 +54,6 @@ export class ApiNetworkProvider implements INetworkProvider {
         return account;
     }
 
-    async getGuardianData(address: IAddress): Promise<GuardianData> {
-        return await this.backingProxyNetworkProvider.getGuardianData(address);
-    }
-
     async getFungibleTokensOfAccount(address: IAddress, pagination?: IPagination): Promise<FungibleTokenOfAccountOnNetwork[]> {
         pagination = pagination || defaultPagination;
 
@@ -89,7 +72,7 @@ export class ApiNetworkProvider implements INetworkProvider {
         let url = `accounts/${address.bech32()}/nfts?${this.buildPaginationParams(pagination)}`;
         let response: any[] = await this.doGetGeneric(url);
         let tokens = response.map(item => NonFungibleTokenOfAccountOnNetwork.fromApiHttpResponse(item));
-
+        
         // TODO: Fix sorting
         tokens.sort((a, b) => a.identifier.localeCompare(b.identifier));
         return tokens;
@@ -108,17 +91,6 @@ export class ApiNetworkProvider implements INetworkProvider {
         return tokenData;
     }
 
-    async getMexPairs(pagination?: IPagination): Promise<PairOnNetwork[]> {
-        let url = `moa/pairs`;
-        if (pagination) {
-            url = `${url}?from=${pagination.from}&size=${pagination.size}`;
-        }
-
-        let response: any[] = await this.doGetGeneric(url);
-
-        return response.map(item => PairOnNetwork.fromApiHttpResponse(item));
-    }
-
     async getTransaction(txHash: string): Promise<TransactionOnNetwork> {
         let response = await this.doGetGeneric(`transactions/${txHash}`);
         let transaction = TransactionOnNetwork.fromApiHttpResponse(txHash, response);
@@ -131,17 +103,12 @@ export class ApiNetworkProvider implements INetworkProvider {
         return status;
     }
 
-    async sendTransaction(tx: ITransaction | ITransactionNext): Promise<string> {
-        const transaction = prepareTransactionForBroadcasting(tx);
-        const response = await this.doPostGeneric("transactions", transaction);
+    async sendTransaction(tx: ITransaction): Promise<string> {
+        let response = await this.doPostGeneric("transactions", tx.toSendable());
         return response.txHash;
     }
 
-    async sendTransactions(txs: (ITransaction | ITransactionNext)[]): Promise<string[]> {
-        return await this.backingProxyNetworkProvider.sendTransactions(txs);
-    }
-
-    async simulateTransaction(tx: ITransaction | ITransactionNext): Promise<any> {
+    async simulateTransaction(tx: ITransaction): Promise<any> {
         return await this.backingProxyNetworkProvider.simulateTransaction(tx);
     }
 
@@ -207,7 +174,6 @@ export class ApiNetworkProvider implements INetworkProvider {
                 ...this.config,
                 headers: {
                     "Content-Type": "application/json",
-                    ...this.config.headers,
                 },
             });
             let responsePayload = response.data;
@@ -222,8 +188,8 @@ export class ApiNetworkProvider implements INetworkProvider {
             throw new ErrNetworkProvider(resourceUrl, error.toString(), error);
         }
 
-        const errorData = error.response.data;
-        const originalErrorMessage = errorData.message || errorData.error || JSON.stringify(errorData);
+        let errorData = error.response.data;
+        let originalErrorMessage = errorData.error || errorData.message || JSON.stringify(errorData);
         throw new ErrNetworkProvider(resourceUrl, originalErrorMessage, error);
     }
 }

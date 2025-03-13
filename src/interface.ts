@@ -1,13 +1,13 @@
 import { AccountOnNetwork } from "./accounts";
-import { ContractQueryResponse } from "./contractQueryResponse";
 import { NetworkConfig } from "./networkConfig";
-import { NetworkGeneralStatistics } from "./networkGeneralStatistics";
 import { NetworkStake } from "./networkStake";
-import { NetworkStatus } from "./networkStatus";
-import { DefinitionOfFungibleTokenOnNetwork, DefinitionOfTokenCollectionOnNetwork } from "./tokenDefinitions";
-import { FungibleTokenOfAccountOnNetwork, NonFungibleTokenOfAccountOnNetwork } from "./tokens";
+import { NetworkGeneralStatistics } from "./networkGeneralStatistics";
 import { TransactionOnNetwork } from "./transactions";
 import { TransactionStatus } from "./transactionStatus";
+import { NetworkStatus } from "./networkStatus";
+import { ContractQueryResponse } from "./contractQueryResponse";
+import { FungibleTokenOfAccountOnNetwork, NonFungibleTokenOfAccountOnNetwork } from "./tokens";
+import { DefinitionOfFungibleTokenOnNetwork, DefinitionOfTokenCollectionOnNetwork } from "./tokenDefinitions";
 
 /**
  * An interface that defines the endpoints of an HTTP API Provider.
@@ -61,7 +61,7 @@ export interface INetworkProvider {
     /**
      * Fetches the state of a transaction.
      */
-    getTransaction(txHash: string, withProcessStatus?: boolean): Promise<TransactionOnNetwork>;
+    getTransaction(txHash: string): Promise<TransactionOnNetwork>;
 
     /**
      * Queries the status of a transaction.
@@ -71,12 +71,7 @@ export interface INetworkProvider {
     /**
      * Broadcasts an already-signed transaction.
      */
-    sendTransaction(tx: ITransaction | ITransactionNext): Promise<string>;
-
-    /**
-     * Broadcasts a list of already-signed transactions.
-     */
-    sendTransactions(txs: (ITransaction | ITransactionNext)[]): Promise<string[]>;
+    sendTransaction(tx: ITransaction): Promise<string>;
 
     /**
      * Simulates the processing of an already-signed transaction.
@@ -105,12 +100,12 @@ export interface INetworkProvider {
     getNonFungibleToken(collection: string, nonce: number): Promise<NonFungibleTokenOfAccountOnNetwork>;
 
     /**
-     * Performs a generic GET action against the provider (useful for new HTTP endpoints).
+     * Performs a generic GET action against the provider (useful for new HTTP endpoints, not yet supported by drtjs).
      */
     doGetGeneric(resourceUrl: string): Promise<any>;
 
     /**
-     * Performs a generic POST action against the provider (useful for new HTTP endpoints).
+     * Performs a generic POST action against the provider (useful for new HTTP endpoints, not yet supported by drtjs).
      */
     doPostGeneric(resourceUrl: string, payload: any): Promise<any>;
 }
@@ -133,21 +128,3 @@ export interface ITransaction {
 }
 
 export interface IAddress { bech32(): string; }
-
-export interface ITransactionNext {
-    sender: string;
-    receiver: string;
-    gasLimit: bigint;
-    chainID: string;
-    nonce: bigint;
-    value: bigint;
-    senderUsername: string;
-    receiverUsername: string;
-    gasPrice: bigint;
-    data: Uint8Array;
-    version: number;
-    options: number;
-    guardian: string;
-    signature: Uint8Array;
-    guardianSignature: Uint8Array;
-}
