@@ -14,7 +14,7 @@ import { DefinitionOfFungibleTokenOnNetwork, DefinitionOfTokenCollectionOnNetwor
 import { FungibleTokenOfAccountOnNetwork, NonFungibleTokenOfAccountOnNetwork } from "./tokens";
 import { TransactionOnNetwork, prepareTransactionForBroadcasting } from "./transactions";
 import { TransactionStatus } from "./transactionStatus";
-import { extendUserAgent } from "./userAgent";
+import { extendUserAgentIfBackend } from "./userAgent";
 import { NetworkProviderConfig } from "./networkProviderConfig";
 
 // TODO: Find & remove duplicate code between "ProxyNetworkProvider" and "ApiNetworkProvider".
@@ -26,7 +26,7 @@ export class ProxyNetworkProvider implements INetworkProvider {
     constructor(url: string, config?: NetworkProviderConfig) {
         this.url = url;
         this.config = { ...defaultAxiosConfig, ...config };
-        extendUserAgent(this.userAgentPrefix, this.config);
+        extendUserAgentIfBackend(this.userAgentPrefix, this.config);
     }
 
     async getNetworkConfig(): Promise<NetworkConfig> {
@@ -103,21 +103,10 @@ export class ProxyNetworkProvider implements INetworkProvider {
         return tokenData;
     }
 
-    async getTransaction(txHash: string, withProcessStatus?: boolean): Promise<TransactionOnNetwork> {
-        let processStatusPromise: Promise<TransactionStatus> | undefined;
-
-        if (withProcessStatus === true) {
-            processStatusPromise = this.getTransactionStatus(txHash);
-        }
-
-        let url = this.buildUrlWithQueryParameters(`transaction/${txHash}`, { withResults: "true" });
-        let response = await this.doGetGeneric(url);
-
-        if (processStatusPromise) {
-            const processStatus = await processStatusPromise;
-            return TransactionOnNetwork.fromProxyHttpResponse(txHash, response.transaction, processStatus);
-        }
-        return TransactionOnNetwork.fromProxyHttpResponse(txHash, response.transaction);
+    async getTransaction(txHash: string, _?: boolean): Promise<TransactionOnNetwork> {
+        const url = this.buildUrlWithQueryParameters(`transaction/${txHash}`, { withResults: "true" });
+        const [data, status] = await Promise.all([this.doGetGeneric(url), this.getTransactionStatus(txHash)]);
+        return TransactionOnNetwork.fromProxyHttpResponse(txHash, data.transaction, status);
     }
 
     async getTransactionStatus(txHash: string): Promise<TransactionStatus> {
