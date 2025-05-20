@@ -6,8 +6,8 @@ The default classes from this package should **only be used as a starting point*
 
 ## Documentation
 
- - [cookbook](https://docs.dharitri.org/sdk-and-tools/drtjs/drtjs-cookbook)
- - [extending the components](https://docs.dharitri.org/sdk-and-tools/drtjs/extending-drtjs)
+ - [cookbook](https://docs.dharitri.org/sdk-and-tools/sdk-js/sdk-js-cookbook-versions)
+ - [extending the components](https://docs.dharitri.org/sdk-and-tools/sdk-js/extending-sdk-js)
 
 ## Distribution
 
