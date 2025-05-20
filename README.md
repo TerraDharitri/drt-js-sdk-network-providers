@@ -1,11 +1,29 @@
-# This package was integrated into [sdk-core](https://www.npmjs.com/package/@dharitri/sdk-core) and will soon be deprecated
-To utilize the functionality from the unified @terradharitri/sdk-core library, please update the existing import statements within your project.
+# Dharitri SDK for JavaScript and TypeScript: Network Providers
 
-For example:
-``` 
-import { ProxyNetworkProvider } from "@terradharitri/sdk-network-providers";
+Network Provider (API, Gateway) components (compatible with @terradharitri/sdk-core).
+
+The default classes from this package should **only be used as a starting point**. As your dApp matures, make sure you **switch to using your own network provider**, tailored to your requirements (whether deriving from the default ones or writing a new one, from scratch) that directly interacts with the Dharitri API (or Gateway). Regarding this, please see the documentation referenced below.
+
+## Documentation
+
+ - [cookbook](https://docs.dharitri.org/sdk-and-tools/drtjs/drtjs-cookbook)
+ - [extending the components](https://docs.dharitri.org/sdk-and-tools/drtjs/extending-drtjs)
+
+## Distribution
+
+[npm](https://www.npmjs.com/package/@terradharitri/sdk-network-providers)
+
+## Installation
+
 ```
-should be changed to:
+npm install @terradharitri/sdk-network-providers
 ```
-import { ProxyNetworkProvider } from "@terradharitri/sdk-core";
+
+### Building the library
+
+In order to compile the library, run the following:
+
+```
+npm install
+npm run compile
 ```

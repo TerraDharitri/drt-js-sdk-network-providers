@@ -61,7 +61,7 @@ export interface INetworkProvider {
     /**
      * Fetches the state of a transaction.
      */
-    getTransaction(txHash: string, withProcessStatus?: boolean): Promise<TransactionOnNetwork>;
+    getTransaction(txHash: string): Promise<TransactionOnNetwork>;
 
     /**
      * Queries the status of a transaction.
@@ -71,12 +71,12 @@ export interface INetworkProvider {
     /**
      * Broadcasts an already-signed transaction.
      */
-    sendTransaction(tx: ITransaction | ITransactionNext): Promise<string>;
+    sendTransaction(tx: ITransaction): Promise<string>;
 
     /**
      * Broadcasts a list of already-signed transactions.
      */
-    sendTransactions(txs: (ITransaction | ITransactionNext)[]): Promise<string[]>;
+    sendTransactions(txs: ITransaction[]): Promise<string[]>;
 
     /**
      * Simulates the processing of an already-signed transaction.
@@ -133,21 +133,3 @@ export interface ITransaction {
 }
 
 export interface IAddress { bech32(): string; }
-
-export interface ITransactionNext {
-    sender: string;
-    receiver: string;
-    gasLimit: bigint;
-    chainID: string;
-    nonce: bigint;
-    value: bigint;
-    senderUsername: string;
-    receiverUsername: string;
-    gasPrice: bigint;
-    data: Uint8Array;
-    version: number;
-    options: number;
-    guardian: string;
-    signature: Uint8Array;
-    guardianSignature: Uint8Array;
-}
